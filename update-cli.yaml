@@ -1,0 +1,58 @@
+schemaVersion: 2
+project:
+  name: iPhone Photo Organizer
+  type: go
+  description: Build, test, and install the standalone Go photo-organizer CLI
+variables:
+  binary: photo-organizer
+  distDir: dist
+defaults:
+  failFast: true
+  timeout: 10m
+requirements:
+  commands: [go, exiftool]
+run:
+  command: ./dist/photo-organizer
+  cwd: .
+workflows:
+  setup:
+    tasks: [install]
+  ci:
+    tasks: [verify]
+tasks:
+  test:
+    steps:
+      - id: test
+        name: Go tests
+        shell: go test ./...
+      - id: vet
+        name: Go static analysis
+        go:
+          action: vet
+  build:
+    requires: [test]
+    steps:
+      - id: build
+        name: Build CLI binary
+        shell: |
+          mkdir -p dist
+          go build -trimpath -ldflags "-X main.version=$(cat VERSION)" -o dist/photo-organizer ./cmd/photo-organizer
+  verify:
+    requires: [build]
+    steps:
+      - id: executable
+        name: Verify compiled binary
+        assert:
+          executable: dist/photo-organizer
+      - id: version
+        name: Verify binary version
+        shell: ./dist/photo-organizer --version
+  install:
+    requires: [verify]
+    steps:
+      - id: install
+        name: Install the executable to /usr/local/bin
+        deploy:
+          source: dist/photo-organizer
+          target: /usr/local/bin/photo-organizer
+          mode: "0755"
