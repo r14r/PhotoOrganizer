@@ -78,6 +78,10 @@ static NSString *HexSHA256(NSString *path) {
 - (void)deviceDidBecomeReadyWithCompleteContentCatalog:(ICCameraDevice *)camera {
     if (self.done) return;
     if (camera.accessRestrictedAppleDevice) { [self fail:@"Device is locked or not trusted"]; return; }
+    if (self.deleteAfterImport && [camera.name rangeOfString:@"iPhone" options:NSCaseInsensitiveSearch].location == NSNotFound) {
+        [self fail:@"Deletion allowed only for an identified iPhone, not a generic camera"];
+        return;
+    }
     if (self.deleteAfterImport && camera.iCloudPhotosEnabled) {
         [self fail:@"Deletion blocked: iCloud Photos is enabled on this iPhone. Import without --delete-after-import instead."];
         return;
