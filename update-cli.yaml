@@ -2,7 +2,7 @@ schemaVersion: 2
 project:
   name: iPhone Photo Organizer
   type: go
-  description: Build, test, and install the standalone Go photo-organizer CLI
+  description: Build, test, and install Go CLI and native macOS ImageCaptureCore importer
 variables:
   binary: photo-organizer
   distDir: dist
@@ -33,26 +33,34 @@ tasks:
     requires: [test]
     steps:
       - id: build
-        name: Build CLI binary
-        shell: |
-          mkdir -p dist
-          go build -trimpath -ldflags "-X main.version=$(cat VERSION)" -o dist/photo-organizer ./cmd/photo-organizer
+        name: Build CLI and macOS helper
+        shell: bash scripts/build.sh
   verify:
     requires: [build]
     steps:
       - id: executable
-        name: Verify compiled binary
+        name: Verify compiled Go binary
         assert:
           executable: dist/photo-organizer
       - id: version
         name: Verify binary version
         shell: ./dist/photo-organizer --version
+      - id: macos-helper
+        name: Verify native helper when running on macOS
+        shell: |
+          if [ "$(uname -s)" = Darwin ]; then test -x dist/photo-organizer-import; fi
   install:
     requires: [verify]
     steps:
       - id: install
-        name: Install the executable to /usr/local/bin
+        name: Install Go CLI
         deploy:
           source: dist/photo-organizer
           target: /usr/local/bin/photo-organizer
           mode: "0755"
+      - id: install-native
+        name: Install native ImageCaptureCore helper on macOS
+        shell: |
+          if [ "$(uname -s)" = Darwin ]; then
+            install -m 0755 dist/photo-organizer-import /usr/local/bin/photo-organizer-import
+          fi
