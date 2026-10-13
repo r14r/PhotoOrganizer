@@ -107,7 +107,17 @@ static NSString *HexSHA256(NSString *path) {
 }
 - (void)cameraDevice:(ICCameraDevice *)camera didAddItems:(NSArray<ICCameraItem *> *)items { (void)camera; (void)items; }
 - (void)cameraDevice:(ICCameraDevice *)camera didRemoveItems:(NSArray<ICCameraItem *> *)items { (void)camera; (void)items; }
-- (void)device:(ICDevice *)device didRemove:(ICCameraItem *)item { (void)device; (void)item; }
+// Required ImageCaptureCore delegate methods (metadata/thumbnails are not requested).
+- (void)didRemoveDevice:(ICDevice *)device {
+    if (device == self.camera && !self.done) [self fail:@"iPhone disconnected during import"];
+}
+- (void)cameraDevice:(ICCameraDevice *)camera didRenameItems:(NSArray<ICCameraItem *> *)items { (void)camera; (void)items; }
+- (void)cameraDevice:(ICCameraDevice *)camera didReceiveMetadata:(NSDictionary *)metadata forItem:(ICCameraItem *)item error:(NSError *)error {
+    (void)camera; (void)metadata; (void)item; (void)error;
+}
+- (void)cameraDevice:(ICCameraDevice *)camera didReceiveThumbnail:(CGImageRef)thumbnail forItem:(ICCameraItem *)item error:(NSError *)error {
+    (void)camera; (void)thumbnail; (void)item; (void)error;
+}
 
 - (NSString *)safeName:(NSString *)name {
     NSString *base = name.lastPathComponent;
